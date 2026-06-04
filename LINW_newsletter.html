@@ -891,6 +891,7 @@ function populateLessons(rows) {
         <div>
           <div class="lesson-title">${titleHtml}</div>
           ${r.Speaker ? `<div class="lesson-speaker">${r.Speaker}</div>` : ''}
+          ${r.Instructor ? `<div class="lesson-speaker" style="color:var(--sage);">Instructor: ${r.Instructor}</div>` : ''}
         </div>`;
       list.appendChild(el);
     });
