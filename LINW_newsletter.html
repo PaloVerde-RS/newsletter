@@ -853,29 +853,47 @@ function populateLessons(rows) {
   const { month } = currentMonthYear();
   const currentMonthName = MONTHS[month].toLowerCase();
 
-  // Filter to rows matching the current month
+  // Filter to rows whose Date field starts with the current month name
+  // e.g. "June 14" matches when current month is June
   const valid = rows.filter(r => {
     if (!r.Title) return false;
-    if (!r.Month) return true; // no month set = always show
-    return r.Month.toString().toLowerCase().trim().startsWith(currentMonthName.slice(0, 3));
+    if (!r.Date) return false;
+    const dateStr = r.Date.toString().toLowerCase().trim();
+    return dateStr.startsWith(currentMonthName.slice(0, 3));
   });
 
   if (!valid.length) { list.innerHTML = '<div class="empty">Talks coming soon.</div>'; return; }
 
-  valid.forEach((r, i) => {
-    const el = document.createElement('div');
-    el.className = 'lesson-item';
-    const titleHtml = r.URL
-      ? `<a href="${r.URL}" target="_blank" rel="noopener">${r.Title}</a>`
-      : r.Title;
-    el.innerHTML = `
-      <div class="lesson-num">${i + 1}</div>
-      <div>
-        <div class="lesson-title">${titleHtml}</div>
-        ${r.Speaker ? `<div class="lesson-speaker">${r.Speaker}</div>` : ''}
-        ${r.Instructor ? `<div class="lesson-speaker" style="color:var(--sage);">Instructor: ${r.Instructor}</div>` : ''}
-      </div>`;
-    list.appendChild(el);
+  // Group by date
+  const grouped = {};
+  valid.forEach(r => {
+    const key = r.Date.toString().trim();
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(r);
+  });
+
+  let num = 1;
+  Object.entries(grouped).forEach(([date, talks]) => {
+    // Date subheader
+    const dateHeader = document.createElement('div');
+    dateHeader.style.cssText = 'font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--sage);font-weight:600;margin:14px 0 8px;font-family:'Jost',sans-serif;';
+    dateHeader.textContent = date;
+    list.appendChild(dateHeader);
+
+    talks.forEach(r => {
+      const el = document.createElement('div');
+      el.className = 'lesson-item';
+      const titleHtml = r.URL
+        ? `<a href="${r.URL}" target="_blank" rel="noopener">${r.Title}</a>`
+        : r.Title;
+      el.innerHTML = `
+        <div class="lesson-num">${num++}</div>
+        <div>
+          <div class="lesson-title">${titleHtml}</div>
+          ${r.Speaker ? `<div class="lesson-speaker">${r.Speaker}</div>` : ''}
+        </div>`;
+      list.appendChild(el);
+    });
   });
 }
 
