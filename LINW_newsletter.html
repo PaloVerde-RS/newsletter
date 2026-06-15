@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Love is Never Wasted — Palo Verde Ward Relief Society</title>
+<link rel="icon" type="image/png" href="PVFavicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -832,11 +833,22 @@ function populateStakeEvents(rows) {
 }
 
 // ─────────────────────────────────────────────
-//  Populate: Ministering Message
+//  Populate: Ministering Message (month-filtered)
 // ─────────────────────────────────────────────
 function populateMinistering(rows) {
   const block = document.getElementById('ministering-block');
-  const row = rows.find(r => r.Message);
+  const { month } = currentMonthYear();
+  const currentMonthName = MONTHS[month].toLowerCase();
+
+  // Try to find a row matching the current month first
+  let row = rows.find(r => {
+    if (!r.Month) return false;
+    return r.Month.toString().toLowerCase().trim().startsWith(currentMonthName.slice(0, 3));
+  });
+
+  // Fall back to first row with a message if no month match (backwards compatible)
+  if (!row) row = rows.find(r => r.Message);
+
   if (!row) { block.innerHTML = '<div class="empty">Message coming soon.</div>'; return; }
   block.innerHTML = `
     <div class="ministering-card">
