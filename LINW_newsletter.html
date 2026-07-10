@@ -361,8 +361,14 @@
     line-height: 1.8; color: var(--charcoal);
     position: relative; z-index: 1;
   }
+  .ministering-para {
+    margin-bottom: 16px;
+  }
+  .ministering-para:last-child {
+    margin-bottom: 0;
+  }
   .ministering-attr {
-    margin-top: 14px;
+    margin-top: 6px;
     font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--rose); font-weight: 600;
   }
@@ -735,7 +741,11 @@ function populateMeta(rows) {
   rows.forEach(r => { if (r.Key) d[r.Key.trim()] = String(r.Value ?? '').trim(); });
 
   const { month, year } = currentMonthYear();
-  const monthLabel = d['Month'] || `${MONTHS[month]} ${year}`;
+  // Auto-generate month if Meta tab value is blank or unparseable
+  const rawMonth = d['Month'] || '';
+  const monthLabel = rawMonth && !rawMonth.includes('Date(')
+    ? rawMonth
+    : `${MONTHS[month]} ${year}`;
   document.getElementById('header-month').textContent = monthLabel;
 
   if (d['Tagline']) document.getElementById('header-motto').textContent = d['Tagline'];
@@ -835,28 +845,40 @@ function populateStakeEvents(rows) {
 }
 
 // ─────────────────────────────────────────────
-//  Populate: Ministering Message (month-filtered)
+//  Populate: Ministering Message (month-filtered, multi-paragraph)
 // ─────────────────────────────────────────────
 function populateMinistering(rows) {
   const block = document.getElementById('ministering-block');
   const { month } = currentMonthYear();
   const currentMonthName = MONTHS[month].toLowerCase();
 
-  // Try to find a row matching the current month first
-  let row = rows.find(r => {
+  // Gather all rows matching the current month
+  let matched = rows.filter(r => {
+    if (!r.Message) return false;
     if (!r.Month) return false;
     return r.Month.toString().toLowerCase().trim().startsWith(currentMonthName.slice(0, 3));
   });
 
   // Fall back to first row with a message if no month match (backwards compatible)
-  if (!row) row = rows.find(r => r.Message);
+  if (!matched.length) {
+    const fallback = rows.find(r => r.Message);
+    if (fallback) matched = [fallback];
+  }
 
-  if (!row) { block.innerHTML = '<div class="empty">Message coming soon.</div>'; return; }
-  block.innerHTML = `
-    <div class="ministering-card">
-      <div class="ministering-text">${row.Message}</div>
-      ${row.Attribution ? `<div class="ministering-attr">— ${row.Attribution}</div>` : ''}
-    </div>`;
+  if (!matched.length) {
+    block.innerHTML = '<div class="empty">Message coming soon.</div>';
+    return;
+  }
+
+  // Build paragraphs — each row is its own paragraph,
+  // attribution renders directly under whichever row has it
+  const paragraphsHtml = matched.map(r => `
+    <div class="ministering-para">
+      <div class="ministering-text">${r.Message}</div>
+      ${r.Attribution ? `<div class="ministering-attr">— ${r.Attribution}</div>` : ''}
+    </div>`).join('');
+
+  block.innerHTML = `<div class="ministering-card">${paragraphsHtml}</div>`;
 }
 
 // ─────────────────────────────────────────────
